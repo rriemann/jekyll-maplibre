@@ -1,128 +1,108 @@
+# frozen_string_literal: true
+
+class Object
+  # File activesupport/lib/active_support/core_ext/object/blank.rb, line 19
+  def blank?
+    respond_to?(:empty?) ? !!empty? : !self
+  end
+
+  def present?
+    not blank?
+  end
+end
+
 module Jekyll
   module Maps
     class LocationFinder
-      def initialize(options)
-        @documents = []
+      def initialize(options) # options are fed by tag arguments
         @options = options
       end
 
       def find(site, page)
-        if @options[:attributes][:latitude] && @options[:attributes][:longitude]
-          return [location_from_options(page)]
-        elsif @options[:filters].empty?
-          @documents << page if with_location?(page)
+        features = []
+
+        # use tag data if latitude and longitude is set
+        if @options[:attributes][:latitude] and @options[:attributes][:longitude]
+          features.push geojson_feature(@options[:attributes], page)
+        # use page data if location is set
+        elsif page["location"].present?
+          features.push geojson_feature(page["location"], page)
+        # extract geojson from page tags
+        elsif page["geojson"].present?
+          features.push(*page["geojson"].features)
+        # use data files indicated with src tag attribute
+        elsif @options.dig(:filter, "src")&.start_with?("_data")
+          src = @options[:filter]["src"]
+          # src = "_data/a/aa _data/b/bb" => ["a/aa", "b/bb"]
+          src.scan(/(?<=_data\/)\S+/).each do |path|
+            dataset = site.data.dig(*path.split("/"))
+            if match_filters? dataset
+              # TODO check also for nested elements in objects or arrays
+              if dataset["location"].present?
+                features.push geojson_feature(dataset)
+              elsif dataset[:type] == "FeatureCollection" # is geojson object
+                features.push(*dataset.features)
+              end
+            end
+          end
         else
-          site.collections.each_value { |collection| filter(collection.docs) }
-          site_data(site).each_value { |items| traverse(items) }
+          features = []
+          site.collections.each_value do |collection|
+            collection.docs.each do |dataset|
+              if match_filters?(dataset, false)
+                if dataset["location"].present?
+                  features << geojson_from(dataset).features
+                elsif dataset[:type] == "FeatureCollection" # is geojson object
+                  features << dataset.features
+                end
+              end
+            end
+          end
         end
 
-        documents_to_locations
-      end
-
-      private
-      def location_from_options(page)
         {
-          :latitude   => @options[:attributes][:latitude],
-          :longitude  => @options[:attributes][:longitude],
-          :title      => @options[:attributes][:marker_title] || page["title"],
-          :icon       => @options[:attributes][:marker_icon] || page["marker_icon"],
-          :url        => @options[:attributes][:marker_url] || fetch_url(page),
-          :image      => @options[:attributes][:marker_img] || page["image"] || "",
-          :popup_html => @options[:attributes][:marker_popup_html] || ""
+          type: "FeatureCollection",
+          features: features
         }
       end
 
       private
-      def site_data(site)
-        return {} unless data_source?
-
-        path = @options[:filters]["src"].scan(%r!_data\/([^\/]+)!).join(".")
-        return site.data if path.empty?
-
-        data = OpenStruct.new(site.data)
-        if @options[:filters]["src"] =~ %r!\.ya?ml!
-          { :path => data[path.gsub(%r!\.ya?ml!, "")] }
-        else
-          data[path]
-        end
+      def geojson_feature(source, page = {})
+        # create geojson from source for compatibility with old jekyll-maps
+        {
+          type: "Feature",
+          properties: {
+            title: source[:marker_title] || page["title"],
+            url: source[:marker_url],
+            img: source[:marker_img],
+            "marker-icon": source[:marker_icon], # compatibility for old jekyll-maps API
+            "marker-symbol": source[:marker_symbol],
+          },
+          geometry: {
+            type: "Point",
+            coordinates: [ # first long, that lat
+              source[:longitude].to_f,
+              source[:latitude].to_f,
+            ]
+          }
+        }
       end
 
       private
-      def data_source?
-        filters = @options[:filters]
-        filters.key?("src") && filters["src"].start_with?("_data")
-      end
-
-      private
-      def traverse(items)
-        return filter(items) if items.is_a?(Array)
-
-        items.each_value { |children| traverse(children) } if items.is_a?(Hash)
-      end
-
-      private
-      def filter(docs)
-        docs.each do |doc|
-          @documents << doc if with_location?(doc) && match_filters?(doc)
-        end
-      end
-
-      private
-      def with_location?(doc)
-        !doc["location"].nil? && !doc["location"].empty?
-      end
-
-      private
-      def match_filters?(doc)
+      def match_filters?(source, skip_src = true)
         @options[:filters].each do |filter, value|
           if filter == "src"
-            if doc.respond_to?(:relative_path)
-              return false unless doc.relative_path.start_with?(value)
+            if source.respond_to?(:relative_path)
+              # "_data/a/aa _data/b/bb" => ["_data/a/aa", "_data/b/bb"]
+              return false unless skip_src or value.scan(/\S+/).map{ |path|
+                source.relative_path.start_with?(path)
+              }.any?
             end
-          elsif doc[filter].nil? || doc[filter] != value
+          elsif source[filter].nil? || source[filter] != value
             return false
           end
         end
         return true
-      end
-
-      private
-      def documents_to_locations
-        locations = []
-        @documents.each do |document|
-          if document["location"].is_a?(Array)
-            document["location"].each do |location|
-              point = convert(document, location)
-              point[:url] = "" if point[:url] == fetch_url(document)
-              locations.push(point)
-            end
-          else
-            locations.push(convert(document, document["location"]))
-          end
-        end
-        locations
-      end
-
-      private
-      def convert(document, location)
-        {
-          :latitude   => location["latitude"],
-          :longitude  => location["longitude"],
-          :title      => location["title"] || document["title"],
-          :icon       => location["marker_icon"] || document["marker_icon"],
-          :url        => location["url"] || fetch_url(document),
-          :url_text   => location["url_text"],
-          :image      => location["image"] || document["image"] || "",
-          :popup_html => location["marker_popup_html"] \
-                         || document["marker_popup_html"] || ""
-        }
-      end
-
-      private
-      def fetch_url(document)
-        return document["url"] if document.is_a?(Hash) && document.key?("url")
-        return document.url if document.respond_to? :url
-        ""
       end
     end
   end

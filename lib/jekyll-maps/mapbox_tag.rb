@@ -12,7 +12,7 @@ module Jekyll
       end
 
       def render(context)
-        locations = @finder.find(context.registers[:site], context.registers[:page])
+        geojson = @finder.find(context.registers[:site], context.registers[:page])
         @args[:attributes][:id] ||= SecureRandom.uuid
 
         <<HTML
@@ -20,7 +20,7 @@ module Jekyll
 <script type='text/javascript'>
   #{JS_LIB_NAME}.register(
     '#{@args[:attributes][:id]}',
-    #{locations.to_json},
+    #{geojson.to_json},
     #{map_options(context.registers[:site]).to_json}
   );
 </script>
