@@ -29,10 +29,10 @@ module Jekyll
           features.push geojson_feature(page["location"], page)
         # extract geojson from page tags
         elsif page["geojson"].present?
-          features.push(*page["geojson"].features)
+          features.push(*page["geojson"]["features"])
         # use data files indicated with src tag attribute
-        elsif @options.dig(:filter, "src")&.start_with?("_data")
-          src = @options[:filter]["src"]
+        elsif @options.dig(:filters, "src")&.start_with?("_data")
+          src = @options[:filters]["src"]
           # src = "_data/a/aa _data/b/bb" => ["a/aa", "b/bb"]
           src.scan(/(?<=_data\/)\S+/).each do |path|
             dataset = site.data.dig(*path.split("/"))
@@ -40,8 +40,8 @@ module Jekyll
               # TODO check also for nested elements in objects or arrays
               if dataset["location"].present?
                 features.push geojson_feature(dataset)
-              elsif dataset[:type] == "FeatureCollection" # is geojson object
-                features.push(*dataset.features)
+              elsif dataset["type"] == "FeatureCollection" # is geojson object
+                features.push(*dataset["features"])
               end
             end
           end
@@ -72,12 +72,13 @@ module Jekyll
         {
           type: "Feature",
           properties: {
-            title: source[:marker_title] || page["title"],
+            title: source[:marker_title],
             url: source[:marker_url],
             img: source[:marker_img],
             "marker-icon": source[:marker_icon], # compatibility for old jekyll-maps API
             "marker-symbol": source[:marker_symbol],
-          },
+            "popup-html": source[:marker_popup_html],
+          }.select {|key, value| !value.nil? },
           geometry: {
             type: "Point",
             coordinates: [ # first long, that lat
