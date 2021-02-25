@@ -1,5 +1,8 @@
 ## master
 
+## 2.3.1 / 2021-02-25
+
+* dependency: update dependencies to alllow for Jekyll v4
 * feature: add tag `mapbox` to display maps with Mapbox GL JS (<https://www.mapbox.com/>)
 
 ## 2.3.0 / 2018-03-17
