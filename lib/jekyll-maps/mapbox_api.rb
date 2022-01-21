@@ -63,7 +63,7 @@ HTML
 end
 
 Jekyll::Hooks.register [:pages, :documents], :post_render do |doc|
-  if doc.output =~ %r!#{Jekyll::Maps::MapboxTag::JS_LIB_NAME}!
+  if !doc.relative_path.end_with?('.xml') and doc.output =~ %r!#{Jekyll::Maps::MapboxTag::JS_LIB_NAME}!
     Jekyll::Maps::MapboxApi.prepend_api_code(doc)
   end
 end
