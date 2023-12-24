@@ -1,5 +1,11 @@
+##
+# copyright: 2020 Anatoliy Yastreb <anatoliy.yastreb@gmail.com>
+# license: MIT
+#
+# original code from jekyll-maps, https://github.com/ayastreb/jekyll-maps/
+
 module Jekyll
-  module Maps
+  module MapLibre
     class OptionsParser
       OPTIONS_SYNTAX     = %r!([^\s]+)\s*=\s*['"]+([^'"]+)['"]+!
       ALLOWED_FLAGS      = %w(
@@ -10,23 +16,18 @@ module Jekyll
         width
         height
         class
-        show_marker
-        show_popup
+        style
         zoom
+        center
+        description
         latitude
         longitude
-        marker_title
-        marker_icon
-        marker_img
-        marker_url
-        marker_popup_html
       ).freeze
 
       class << self
         def parse(raw_options)
           options = {
             :attributes => {},
-            :filters    => {},
             :flags      => {}
           }
           raw_options.scan(OPTIONS_SYNTAX).each do |key, value|
@@ -34,7 +35,7 @@ module Jekyll
             if ALLOWED_ATTRIBUTES.include?(key)
               options[:attributes][key.to_sym] = value
             else
-              options[:filters][key] = value
+              raise "found not allowed MapLibre tag attribute #{key}"
             end
           end
           ALLOWED_FLAGS.each do |key|

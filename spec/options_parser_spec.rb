@@ -1,9 +1,9 @@
 require "spec_helper"
 
-describe Jekyll::Maps::OptionsParser do
+describe Jekyll::MapLibre::OptionsParser do
   context "parses filters" do
     it "ignores extra whitespaces" do
-      actual   = Jekyll::Maps::OptionsParser.parse(" foo_key = 'bar' moo  = 'baz'")
+      actual   = Jekyll::MapLibre::OptionsParser.parse(" foo_key = 'bar' moo  = 'baz'")
       expected = {
         "foo_key" => "bar",
         "moo"     => "baz"
@@ -13,7 +13,7 @@ describe Jekyll::Maps::OptionsParser do
     end
 
     it "parses double quotes" do
-      actual   = Jekyll::Maps::OptionsParser.parse('foo="bar"')
+      actual   = Jekyll::MapLibre::OptionsParser.parse('foo="bar"')
       expected = {
         "foo" => "bar"
       }
@@ -22,7 +22,7 @@ describe Jekyll::Maps::OptionsParser do
     end
 
     it "parses single argument" do
-      actual   = Jekyll::Maps::OptionsParser.parse("foo='bar'")
+      actual   = Jekyll::MapLibre::OptionsParser.parse("foo='bar'")
       expected = {
         "foo" => "bar"
       }
@@ -31,7 +31,7 @@ describe Jekyll::Maps::OptionsParser do
     end
 
     it "parses multiple arguments" do
-      actual   = Jekyll::Maps::OptionsParser.parse("foo='bar' moo='baz'")
+      actual   = Jekyll::MapLibre::OptionsParser.parse("foo='bar' moo='baz'")
       expected = {
         "foo" => "bar",
         "moo" => "baz"
@@ -41,7 +41,7 @@ describe Jekyll::Maps::OptionsParser do
     end
 
     it "parses multiple values in argument" do
-      actual   = Jekyll::Maps::OptionsParser.parse("foo='bar,baz'")
+      actual   = Jekyll::MapLibre::OptionsParser.parse("foo='bar,baz'")
       expected = {
         "foo" => %w(bar baz)
       }
@@ -50,7 +50,7 @@ describe Jekyll::Maps::OptionsParser do
     end
 
     it "parses multiple words in argument" do
-      actual = Jekyll::Maps::OptionsParser.parse("foo='bar baz' moo = 'mar maz'")
+      actual = Jekyll::MapLibre::OptionsParser.parse("foo='bar baz' moo = 'mar maz'")
       expected = {
         "foo" => "bar baz",
         "moo" => "mar maz"
@@ -62,7 +62,7 @@ describe Jekyll::Maps::OptionsParser do
 
   context "parses attributes" do
     it "parses predefined attributes" do
-      actual   = Jekyll::Maps::OptionsParser.parse(
+      actual   = Jekyll::MapLibre::OptionsParser.parse(
         "id='foo' width='100' height='50%' class='my-css-class,another-class'"
       )
       expected = {
@@ -78,7 +78,7 @@ describe Jekyll::Maps::OptionsParser do
 
   context "parses flags" do
     it "parses all allowed flags correctly" do
-      actual   = Jekyll::Maps::OptionsParser.parse("no_cluster")
+      actual   = Jekyll::MapLibre::OptionsParser.parse("no_cluster")
       expected = {
         :no_cluster => true
       }

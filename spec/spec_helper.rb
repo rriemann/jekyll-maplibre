@@ -3,7 +3,7 @@ require "simplecov"
 SimpleCov.start
 
 require "jekyll"
-require "jekyll-maps"
+require "jekyll-maplibre"
 
 Jekyll.logger.log_level = :error
 
