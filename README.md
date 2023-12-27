@@ -110,6 +110,12 @@ Example assets sources:
 - [maplibre-gl.css](https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css)
 - [OSM-Liberty-layers.json extracted from OSM Liberty style.json](https://github.com/maputnik/osm-liberty/blob/f2c798e80dc11d47613e3b093881b4d37a5fde8e/style.json)
 
+5. Load MapLibre GL JS CSS in `<head>`
+
+The file `maplibre-gl.css` should be linked in your `<head>` or included in another css file.
+
+Many Jeyll templates provide for a file `_includes/my-head.html` or `_includes/custom-head.html` (check the docs). If so, add a line such as `<link href="/assets/maps/maplibre-gl.css" rel="stylesheet">`.
+
 ## Usage
 
 ### MapLibre Tag
@@ -255,6 +261,7 @@ The following issues and limitation require contribution:
 - implement more than one map tag per page
 - add more examples on how to generate geojson data from Jekyll collections/data.
 - Jekyll-Maps has spec tests (still in this repo) – make them work again with Jekyll MapLibre
+- add flag to switch popups to open by default (without click to open)
 
 ## Similar Software
 
