@@ -27,7 +27,7 @@ plugins:
 
 3. Also prepare configuration specific for `jekyll-maplibre` in your site's `_config.yml`:
 
-```
+```yml
 maplibre:
   width:  600
   height: 400
@@ -56,7 +56,7 @@ maplibre:
 
 4. Prepare assets to display maps with MapLibre GL JS:
 
-The required assets depend on your specific map configuration. With cloud hosting (untested), it may be sufficient to only configure the `style` property above.
+The required assets depend on your specific map configuration. With cloud hosting, it is sufficient to only configure the `style` property above.
 
 For self-hosted maps, you need to host and configure the following resources:
 
@@ -110,11 +110,29 @@ Example assets sources:
 - [maplibre-gl.css](https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css)
 - [OSM-Liberty-layers.json extracted from OSM Liberty style.json](https://github.com/maputnik/osm-liberty/blob/f2c798e80dc11d47613e3b093881b4d37a5fde8e/style.json)
 
+Those files are distributed as part of the [assets on Github](https://github.com/rriemann/jekyll-maplibre/releases/tag/1.0-alpha.1).
+
+It is also possible to self-host everything except the openmaptiles source and link the latter to mbtiles in the cloud, i.e.:
+
+~~~yml
+maplibre:
+  sources:
+    openmaptiles: 
+      type: vector
+      url: https://api.maptiler.com/tiles/v3-openmaptiles/tiles.json?key=[REPLACE WITH OWN API KEY]
+      attribution: © <a href='https://openstreetmap.org'>OpenStreetMap contributors</a>
+    ...
+~~~
+
 5. Load MapLibre GL JS CSS in `<head>`
 
 The file `maplibre-gl.css` should be linked in your `<head>` or included in another css file.
 
 Many Jeyll templates provide for a file `_includes/my-head.html` or `_includes/custom-head.html` (check the docs). If so, add a line such as `<link href="/assets/maps/maplibre-gl.css" rel="stylesheet">`.
+
+6. Check your Content Security Policy (CSP) headers
+
+Read more about CSP here: <https://maplibre.org/maplibre-gl-js/docs/#csp-directives>
 
 ## Usage
 
@@ -144,6 +162,8 @@ Example with all attributes and flags:
 ```
 {% maplibre id="custom-id" width="100%" height="200" class="custom-class" style="clear: both;" zoom="10" center="4.300,50.800" description="<a href='#'>Popup Link</a>" longitude="4.300" latitude="50.800" no_cluster %}
 ```
+
+**Hint:** Icons/sprites work with the dev server only with `localhost` but not with `127.0.0.1`!
 
 ### Data Source
 
@@ -241,10 +261,6 @@ With `where` and `where_exp` (see [documentation](https://jekyllrb.com/docs/liqu
 
 Clusters are enabled by default. Use the flag `no_cluster` in the tag to disable clusters.
 
-## Examples
-
-Want to see Jekyll MapLibre in action? Check out [Demo Page](https://ayastreb.me/jekyll-maps/#examples)!
-
 ## Contributing
 
 1. Fork it (https://github.com/rriemann/jekyll-maplibre/fork)
@@ -262,6 +278,7 @@ The following issues and limitation require contribution:
 - add more examples on how to generate geojson data from Jekyll collections/data.
 - Jekyll-Maps has spec tests (still in this repo) – make them work again with Jekyll MapLibre
 - add flag to switch popups to open by default (without click to open)
+- fix bug: `Liquid Exception: stack level too deep in [your file].md/#excerpt` (current work around, use maplibre tags only after the excerpt `\<!--more--\>`
 
 ## Similar Software
 

@@ -44,9 +44,15 @@ module Jekyll
         zoom = @options[:attributes][:zoom] || context.registers[:site].config.dig('maplibre', 'zoom') || DEFAULT_ZOOM
         
         @options[:attributes][:id] ||= "maplibre-#{SecureRandom.uuid}"
-
-        template = ERB.new File.read(File.expand_path("maplibre.html.erb", __dir__))
+        
+        # binding.irb
         template.result(binding)
+      end
+      
+      private
+      # @return [Object] ERB instance
+      def template
+        @@template ||= ERB.new File.read(File.expand_path("maplibre.html.erb", __dir__))
       end
       
       private
@@ -140,7 +146,7 @@ module Jekyll
       #
       # @return [Array,nil] LngLat array or nil
       def center(context)
-        @options[:attributes][:center]&.map{|v| v.to_f} || geojson(context).dig(:features, 0, :geometry, :coordinates)
+        @options[:attributes][:center]&.map{|v| v.to_f} || geojson(context)&.dig(:features, 0, :geometry, :coordinates)
       end
 
       private
@@ -187,15 +193,16 @@ module Jekyll
               }
             }],
           }
-        elsif (context.registers[:page]["geojson"]&.is_a?(String) and context.registers[:page]["geojson"]&.end_with?(".json")) or
-              context.registers[:page]["geojson"]["type"] == "FeatureCollection" then
+        elsif context.registers[:page]["geojson"].is_a? String and context.registers[:page]["geojson"].end_with?(".json") then
+          context.registers[:page]["geojson"]
+        elsif context.registers[:page].to_hash.dig("geojson", "type") == "FeatureCollection" then
           context.registers[:page]["geojson"].deep_symbolize_keys
-        elsif context.registers[:page]["geojson"]["type"] == "Feature" then
+        elsif context.registers[:page].to_hash.dig("geojson", "type") == "Feature" then
           {
             type: "FeatureCollection",
             features: [context.registers[:page]["geojson"].deep_symbolize_keys]
           }
-        elsif context.registers[:page]["location"]["latitude"] and context.registers[:page]["location"]["longitude"] then
+        elsif ((lat = context.registers[:page].to_hash.dig("location", "latitude")) and (lon = context.registers[:page].to_hash.dig("location", "longitude"))) then
           {
             type: "FeatureCollection",
             features: [{
@@ -203,9 +210,9 @@ module Jekyll
               # properties: {}.select {|key, value| !value.nil? },
               geometry: {
                 type: "Point",
-                coordinates: [ # first long, that lat
-                  context.registers[:page]["location"]["longitude"].to_f,
-                  context.registers[:page]["location"]["latitude"].to_f,
+                coordinates: [
+                  # first lon, that lat
+                  lon.to_f, lat.to_f
                 ]
               }
             }]
